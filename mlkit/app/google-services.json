@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "848535007783",
+    "firebase_url": "https://virtual-driving-instruct-91a0b.firebaseio.com",
+    "project_id": "virtual-driving-instruct-91a0b",
+    "storage_bucket": "virtual-driving-instruct-91a0b.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:848535007783:android:4187f6d31b101909519402",
+        "android_client_info": {
+          "package_name": "com.google.firebase.samples.apps.mlkit"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "848535007783-acjqs5enp5acbd669vpkdgils1ieeals.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDEoeSQwTnROfl4WWCvLGsQUQtbhXdIJVE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "848535007783-acjqs5enp5acbd669vpkdgils1ieeals.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
