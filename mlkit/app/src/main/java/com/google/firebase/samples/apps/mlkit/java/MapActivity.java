@@ -1,9 +1,12 @@
 package com.google.firebase.samples.apps.mlkit.java;
 
+import androidx.annotation.NonNull;
 import androidx.fragment.app.FragmentActivity;
 
+import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -11,6 +14,8 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -18,16 +23,22 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 
+import com.google.android.gms.tasks.OnFailureListener;
+import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.samples.apps.mlkit.R;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class MapActivity extends FragmentActivity implements OnMapReadyCallback {
+public class MapActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener {
+    private final String TAG = "MapActivity";
 
     private GoogleMap mMap;
-    RequestQueue queue;
+    private RequestQueue queue;
+    private FusedLocationProviderClient fusedLocationClient;
+
+    private Location mCurrentLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,12 +51,21 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
 
         // Instantiate the RequestQueue.
         queue = Volley.newRequestQueue(this);
+
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
     }
 
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+
+        // TODO: Before enabling the My Location layer, you must request
+        // location permission from the user. This sample does not include
+        // a request for location permission.
+        mMap.setMyLocationEnabled(true);
+        mMap.setOnMyLocationButtonClickListener(this);
+
 
         String url = "https://maps.london.ca/arcgisa/rest/services/OpenData/OpenData_Transportation/MapServer/16/query?where=1%3D1&outFields=*&outSR=4326&f=json";
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
@@ -57,12 +77,12 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
                             JSONArray features = json.getJSONArray("features");
                             for (int i = 0; i < features.length(); i++) {
                                 JSONObject f = features.getJSONObject(i);
-                                Boolean isSignaled = f.getJSONObject("attributes").getString("IntersectionType") == "Signalized Intersection";
+                                String type = f.getJSONObject("attributes").getString("IntersectionType");
                                 double x = f.getJSONObject("geometry").getDouble("x");
                                 double y = f.getJSONObject("geometry").getDouble("y");
 
-                                LatLng pos = new LatLng(x, y);
-                                mMap.addMarker(new MarkerOptions().position(pos));
+                                LatLng pos = new LatLng(y, x);
+                                mMap.addMarker(new MarkerOptions().position(pos).title(type));
                             }
                         } catch (JSONException e) {
                             e.printStackTrace();
@@ -76,9 +96,30 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback 
         });
         queue.add(stringRequest);
 
-        // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(43.0097095,-81.2748057), 15));
+        fusedLocationClient.getLastLocation()
+                .addOnSuccessListener(this, new OnSuccessListener<Location>() {
+                    @Override
+                    public void onSuccess(Location location) {
+                        if (location != null) {
+                            mCurrentLocation = location;
+                            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(
+                                    new LatLng(location.getLatitude(), location.getLongitude()), 15));
+                        }
+                    }
+                })
+                .addOnFailureListener(this, new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.e(TAG, "Failed to get location: ", e);
+                    }
+                });
+    }
+
+    @Override
+    public boolean onMyLocationButtonClick() {
+        Toast.makeText(this, "MyLocation button clicked", Toast.LENGTH_SHORT).show();
+        // Return false so that we don't consume the event and the default behavior still occurs
+        // (the camera animates to the user's current position).
+        return false;
     }
 }
