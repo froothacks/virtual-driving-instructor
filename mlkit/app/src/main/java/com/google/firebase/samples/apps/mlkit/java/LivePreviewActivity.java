@@ -18,6 +18,7 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.hardware.Camera;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.View;
 import android.widget.AdapterView;
@@ -52,6 +53,7 @@ import com.google.firebase.samples.apps.mlkit.java.facedetection.FaceContourDete
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Demo app showing the various features of ML Kit for Firebase. This class is used to
@@ -79,6 +81,8 @@ public final class LivePreviewActivity extends AppCompatActivity
     private GraphicOverlay graphicOverlay;
     private String selectedModel = FACE_CONTOUR;
 
+    TextToSpeech t1;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -86,6 +90,14 @@ public final class LivePreviewActivity extends AppCompatActivity
         if (!allPermissionsGranted()) {
             getRuntimePermissions();
         }
+        t1=new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if(status != TextToSpeech.ERROR) {
+                    t1.setLanguage(Locale.US);
+                }
+            }
+        });
 
         setContentView(R.layout.activity_live_preview);
 
@@ -234,7 +246,7 @@ public final class LivePreviewActivity extends AppCompatActivity
             switch (model) {
                 case FACE_CONTOUR:
                     Log.i(TAG, "Using Face Contour Detector Processor");
-                    cameraSource.setMachineLearningFrameProcessor(new FaceContourDetectorProcessor());
+                    cameraSource.setMachineLearningFrameProcessor(new FaceContourDetectorProcessor(t1));
                     break;
                 default:
                     Log.e(TAG, "Unknown model: " + model);
