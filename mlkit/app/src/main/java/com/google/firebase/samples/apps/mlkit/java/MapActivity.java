@@ -38,6 +38,11 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.samples.apps.mlkit.R;
 import com.google.firebase.samples.apps.mlkit.common.CameraSource;
 import com.google.firebase.samples.apps.mlkit.common.CameraSourcePreview;
@@ -83,6 +88,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     private boolean mReminders = true;
     private boolean mFeedback = true;
+
+    private String mDestination = null;
 
     private LatLng mCurrentLocation = null;
     private LatLng mLastLocation = null;
@@ -188,8 +195,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         });
 
 
-
-
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -229,6 +234,26 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         createCameraSource("Face Contour");
         cameraSource.setFacing(CameraSource.CAMERA_FACING_FRONT);
         startCameraSource();
+
+        FirebaseDatabase database = FirebaseDatabase.getInstance("https://virtual-driving-instruct-91a0b.firebaseio.com/");
+        DatabaseReference ref = database.getReference("signal");
+
+        ref.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                // This method is called once with the initial value and again
+                // whenever data at this location is updated.
+                String value = dataSnapshot.getValue(String.class);
+                Log.d(TAG, "Value is: " + value);
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                // Failed to read value
+                Log.w(TAG, "Failed to read value.", error.toException());
+            }
+        });
+
     }
 
     private void startCameraSource() {
@@ -378,14 +403,35 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 Log.d(TAG, "REACHED INTERSEC " + nearest.getPosition());
 
                 if (mReminders) {
-                    if (approaching.getTitle().equals("Signalized Intersection")) {
-                        toastAndSpeak(R.string.reminder_intersection_signaled_free);
+                    boolean isSignaled = approaching.getTitle().equals("Signalized Intersection");
+                    if (mDestination == null) {
+                        if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_free);
+                        else  toastAndSpeak(R.string.reminder_intersection_unsignaled_free);
                     } else {
-                        toastAndSpeak(R.string.reminder_intersection_unsignaled_free);
+                        Marker turn = getMatchingTurn(approaching.getPosition());
+                        Log.i(TAG, "getMatchingTurn: " + turn);
+                        if (turn != null) {
+                            if (turn.getTitle().equals("turn-left")) {
+                                if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_left);
+                                else  toastAndSpeak(R.string.reminder_intersection_unsignaled_left);
+                            }
+                            else if (turn.getTitle().equals("turn-right")) {
+                                if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_right);
+                                else  toastAndSpeak(R.string.reminder_intersection_unsignaled_right);
+                            }
+                            else {
+                                // Unknown type of turn; treat as free
+                                if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_free);
+                                else  toastAndSpeak(R.string.reminder_intersection_unsignaled_free);
+                            }
+                        } else {
+                            Log.e(TAG, "getMatchingTurn returned null");
+                            if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_straight);
+                            else  toastAndSpeak(R.string.reminder_intersection_unsignaled_straight);
+                        }
                     }
                     enterIntersectionTime = (double) System.currentTimeMillis()/1000;
                 }
-
             }
 
             if (minDistance < 10) {
@@ -424,7 +470,18 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         return Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
     }
 
+    public Marker getMatchingTurn(LatLng loc) {
+        for (Marker turn : turns) {
+            if (distance(loc, turn.getPosition()) < 10) {
+                return turn;
+            }
+        }
+        return null;
+    }
+
     public void setDestination(String destination) {
+        mDestination = destination;
+
         String url = String.format(Locale.US,
                 "https://maps.googleapis.com/maps/api/directions/json?origin=%.6f,%.6f&destination=%s&key=%s&mode=driving&avoid=tolls|highways|ferries&region=ca",
                 mCurrentLocation.latitude,
