@@ -25,6 +25,7 @@ import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
@@ -32,6 +33,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
+import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
@@ -632,6 +634,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 
+    public float getBearing(LatLng from, LatLng to) {
+        if (from == null) return 0;
+        return (float) Math.toDegrees(Math.atan2(to.longitude - from.longitude, to.latitude - from.latitude));
+    }
+
     public void runDemoRoute() {
         demoRouteMarkers = new Marker[demoRoute.length];
         for (int i = 0; i < demoRoute.length; i++) {
@@ -649,18 +656,27 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             public void run(){
                 final int lastIndex = demoRouteIndex;
                 double[] xy = demoRoute[demoRouteIndex++];
+                mLastLocation = mCurrentLocation;
                 mCurrentLocation = new LatLng(xy[0], xy[1]);
+
                 if (demoRouteIndex >= demoRoute.length) {
                     demoRouteIndex = 0;
                     demoRouteTimer.cancel();
                 }
-
 
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         demoRouteMarkers[lastIndex].remove();
                         onLocationUpdated();
+
+                        mMap.animateCamera(CameraUpdateFactory.newCameraPosition(CameraPosition.builder()
+                                .target(mCurrentLocation)
+                                .bearing(getBearing(mLastLocation, mCurrentLocation))
+                                .tilt(45)
+                                .zoom(18)
+                                .build()), 200, null);
+
                     }
                 });
             }
