@@ -195,8 +195,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
         //if you want to update the items at a later time it is recommended to keep it in a variable
         PrimaryDrawerItem title = new PrimaryDrawerItem().withIdentifier(drawerIDs.TITLE.ordinal()).withName("DriverSyde");
-        SwitchDrawerItem reminderToggle = new SwitchDrawerItem().withIdentifier(drawerIDs.REMINDER_TOGGLE.ordinal()).withName("Reminder").withChecked(mReminders);
-        SwitchDrawerItem feedbackToggle = new SwitchDrawerItem().withIdentifier(drawerIDs.FEEDBACK_TOGGLE.ordinal()).withName("Feedback").withChecked(mFeedback);
+        SecondarySwitchDrawerItem reminderToggle = new SecondarySwitchDrawerItem().withIdentifier(drawerIDs.REMINDER_TOGGLE.ordinal()).withName("Proactive reminders").withChecked(mReminders);
+        SecondarySwitchDrawerItem feedbackToggle = new SecondarySwitchDrawerItem().withIdentifier(drawerIDs.FEEDBACK_TOGGLE.ordinal()).withName("Immediate feedback").withChecked(mFeedback);
         PrimaryDrawerItem demoHeading = new PrimaryDrawerItem().withIdentifier(drawerIDs.DEMO.ordinal()).withName("Demo");
         SecondaryDrawerItem cameraView = new SecondaryDrawerItem().withIdentifier(drawerIDs.CAMERA_VIEW.ordinal()).withName("Camera view");
         SecondaryDrawerItem dataPoints = new SecondaryDrawerItem().withIdentifier(drawerIDs.DATA_POINTS.ordinal()).withName("Toggle data points");
