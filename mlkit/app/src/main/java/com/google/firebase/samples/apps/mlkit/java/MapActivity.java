@@ -454,8 +454,12 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                                 LatLng pos = new LatLng(geometry.getDouble("y"), geometry.getDouble("x"));
                                 if (!((pos.latitude == 43.00476696908109 && pos.longitude == -81.25795717969847))) {
                                        // || (pos.latitude == 43.00907802382399 && pos.longitude == -81.26129407898745))) {
+                                    float hue = (type.equals("Signalized Intersection")) ?
+                                            BitmapDescriptorFactory.HUE_GREEN :
+                                            BitmapDescriptorFactory.HUE_ORANGE;
                                     Marker m = mMap.addMarker(new MarkerOptions()
-                                            .position(pos).title(type));
+                                            .position(pos).title(type)
+                                            .icon(BitmapDescriptorFactory.defaultMarker(hue)));
                                     m.setVisible(mDataPointsVisible);
                                     intersections.add(m);
                                 }
@@ -653,7 +657,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
                                 Marker m = mMap.addMarker(new MarkerOptions()
                                         .position(pos).title(maneuver)
-                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
                                 m.setVisible(mDataPointsVisible);
                                 turns.add(m);
                             }
@@ -699,6 +703,11 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     .icon(bitmapDescriptorFromVector(this, R.drawable.route_dot_24dp))
                     .flat(true));
             demoRouteMarkers[i] = m;
+
+            if (i == demoRoute.length - 1) {
+                mMap.addMarker(new MarkerOptions().position(pos));
+
+            }
         }
 
         demoRouteTimer.scheduleAtFixedRate(new TimerTask() {
