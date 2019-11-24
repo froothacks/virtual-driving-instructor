@@ -130,11 +130,17 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
                     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
-//                        if (drawerItem.getIdentifier() == 3) {
-//                            // load tournament screen
+                        if (drawerItem.getIdentifier() == 3) {
+                            if (preview.getVisibility() == View.INVISIBLE) {
+                                preview.setVisibility(View.VISIBLE);
+                                graphicOverlay.setVisibility(View.VISIBLE);
+                            } else {
+                                preview.setVisibility(View.INVISIBLE);
+                                graphicOverlay.setVisibility(View.INVISIBLE);
+                            }
 //                            Intent intent = new Intent(getBaseContext(), LivePreviewActivity.class);
 //                            view.getContext().startActivity(intent);
-//                        }
+                        }
                         return true;
                     }
 
