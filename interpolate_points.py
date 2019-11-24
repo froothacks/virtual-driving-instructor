@@ -41,10 +41,19 @@ def interpolate(p1, p2, numPoints):
 totalPoints = 1000
 t = total_length(points)
 allp = []
+
 for i in range(0, len(points) - 1):
 	cur = length(points[i], points[i+1])
-	allp += interpolate(points[i], points[i+1], totalPoints/(t/cur))
+	x = 1
+	if i <= 4:
+		x = 0.5
+	if i > 5:
+		x = 2.5
+	allp += interpolate(points[i], points[i+1], x*(totalPoints/(t/cur)))
 	# print("curnumpoints", totalPoints/(t/cur))
 	# print(len(allp))
 allp.append(points[-1])
-print(allp)
+
+allps = str(allp)
+jallps = allps.replace("[", "{").replace("]", "}")
+print(jallps)
