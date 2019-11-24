@@ -146,7 +146,7 @@ public class FaceContourDetectorProcessor extends VisionProcessorBase<List<Fireb
                 if (System.currentTimeMillis() - lastEyesOpen > 2000) {
                     lastEyesOpen = System.currentTimeMillis();
                     Log.d(TAG, "BAD YOUR EYES ARE CLOSED");
-                    ttsObj.speak("Please open your eyes!", TextToSpeech.QUEUE_FLUSH, null);
+                    ttsObj.speak("Stay alert!", TextToSpeech.QUEUE_FLUSH, null);
                 }
                 eyesClosed = true;
             }
