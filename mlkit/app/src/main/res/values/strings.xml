@@ -27,6 +27,11 @@
     <string name="reminder_lane_change_left">Remember to check your blind spot.</string>
     <string name="reminder_lane_change_right">Remember to check your blind spot.</string>
 
+    <string name="feedback_good_intersection">Good job!</string>
+    <string name="feedback_bad_left_scan">You failed to scan left!</string>
+    <string name="feedback_bad_right_scan">You failed to scan right!</string>
+    <string name="feedback_bad_both_scan">You failed to scan both left and right!</string>
+
     <!-- Settings related strings. -->
     <string name="pref_screen_title_live_preview">Live preview settings</string>
     <string name="pref_screen_title_still_image">Still image settings</string>
