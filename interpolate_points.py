@@ -34,7 +34,10 @@ def interpolate(p1, p2, numPoints):
 	while frac < 1:
 		points.append([p1[0]*(1-frac)+p2[0]*frac, p1[1]*(1-frac)+p2[1]*frac])
 		frac += 1/numPoints
-	# points.append(p2)
+	frac = 0.95
+	while frac < 1:
+		points.append([p1[0]*(1-frac)+p2[0]*frac, p1[1]*(1-frac)+p2[1]*frac])
+		frac += 0.01
 	# print(points)
 	return points
 
@@ -47,7 +50,7 @@ for i in range(0, len(points) - 1):
 	x = 1
 	if i <= 4:
 		x = 0.5
-	if i > 5:
+	if 9 > i > 6:
 		x = 2.5
 	allp += interpolate(points[i], points[i+1], x*(totalPoints/(t/cur)))
 	# print("curnumpoints", totalPoints/(t/cur))
