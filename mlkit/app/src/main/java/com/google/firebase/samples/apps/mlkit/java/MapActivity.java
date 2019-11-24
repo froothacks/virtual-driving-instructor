@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.Toast;
 
 import com.android.volley.DefaultRetryPolicy;
@@ -44,6 +45,7 @@ import com.google.firebase.samples.apps.mlkit.common.GraphicOverlay;
 import com.google.firebase.samples.apps.mlkit.java.facedetection.FaceContourDetectorProcessor;
 import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.DrawerBuilder;
+import com.mikepenz.materialdrawer.interfaces.OnCheckedChangeListener;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import com.mikepenz.materialdrawer.model.ToggleDrawerItem;
@@ -62,9 +64,22 @@ import java.util.TimerTask;
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener {
     private final String TAG = "MapActivity";
 
+    private enum drawerIDs {
+        REMINDER_TOGGLE,
+        FEEDBACK_TOGGLE,
+        FREQUENCY,
+        FEEDBACK,
+        CAMERA,
+        START_DEMO_ROUTE
+    }
+
+
     private GoogleMap mMap;
     private RequestQueue queue;
     private FusedLocationProviderClient fusedLocationClient;
+
+    private boolean mReminders = true;
+    private boolean mFeedback = true;
 
     private LatLng mCurrentLocation = null;
     private LatLng mLastLocation = null;
@@ -103,23 +118,13 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 //                .commit();
 //        mapView.setVisibility(View.INVISIBLE);
 
-        private enum drawerIDs {
-            REMINDER_TOGGLE,
-            FEEDBACK_TOGGLE,
-            FREQUENCY,
-            FEEDBACK,
-            CAMERA,
-            START_DEMO_ROUTE
-        }
-
         //if you want to update the items at a later time it is recommended to keep it in a variable
-        ToggleDrawerItem reminderToggle = new ToggleDrawerItem().withIdentifier(drawerIDs.REMINDER_TOGGLE.ordinal()).withDescription("Reminder").withChecked(false);
-        ToggleDrawerItem feedbackToggle = new ToggleDrawerItem().withIdentifier(drawerIDs.FEEDBACK_TOGGLE.ordinal()).withDescription("Feedback").withChecked(true);
+        ToggleDrawerItem reminderToggle = new ToggleDrawerItem().withIdentifier(drawerIDs.REMINDER_TOGGLE.ordinal()).withDescription("Reminder").withChecked(mReminders);
+        ToggleDrawerItem feedbackToggle = new ToggleDrawerItem().withIdentifier(drawerIDs.FEEDBACK_TOGGLE.ordinal()).withDescription("Feedback").withChecked(mFeedback);
         PrimaryDrawerItem frequency = new PrimaryDrawerItem().withIdentifier(drawerIDs.FREQUENCY.ordinal()).withName("Frequency");
         PrimaryDrawerItem feedback = new PrimaryDrawerItem().withIdentifier(drawerIDs.FEEDBACK.ordinal()).withName("Feedback after");
         PrimaryDrawerItem camera = new PrimaryDrawerItem().withIdentifier(drawerIDs.CAMERA.ordinal()).withName("Camera");
         PrimaryDrawerItem startDemoRoute = new PrimaryDrawerItem().withIdentifier(drawerIDs.START_DEMO_ROUTE.ordinal()).withName("Start demo route");
-
 
 
         //create the drawer and remember the `Drawer` result object
@@ -130,19 +135,18 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 .withCloseOnClick(true)
                 .withSelectedItem(-1)
                 .addDrawerItems(
+                        feedback,
                         reminderToggle,
                         feedbackToggle,
                         frequency,
-                        feedback,
                         camera,
                         startDemoRoute
                 )
-
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
                     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
                         switch (drawerIDs.values()[(int) drawerItem.getIdentifier()]) {
-                            case REMINDER_TOGGLE:
+                            case CAMERA:
                                 if (preview.getVisibility() == View.INVISIBLE) {
                                     preview.setVisibility(View.VISIBLE);
                                     graphicOverlay.setVisibility(View.VISIBLE);
@@ -162,13 +166,21 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     }
 
                 })
-//                .withOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-//                    @Override
-//                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-//                        Log.i("material-drawer", "toggleChecked: " + isChecked);
-//                    }
-//                })
                 .build();
+
+        reminderToggle.withOnCheckedChangeListener(new OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(IDrawerItem drawerItem, CompoundButton buttonView, boolean isChecked) {
+                mReminders = isChecked;
+            }
+        });
+        feedbackToggle.withOnCheckedChangeListener(new OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(IDrawerItem drawerItem, CompoundButton buttonView, boolean isChecked) {
+                mFeedback = isChecked;
+            }
+        });
+
 
 
 
@@ -354,7 +366,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 approaching = nearest;
                 reachedIntersection = false;
 
-                if (true) {
+                if (mReminders) {
                     if (approaching.getTitle().equals("Signalized Intersection")) {
                         toastAndSpeak(R.string.reminder_intersection_signaled_free);
                     } else {
@@ -368,7 +380,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 reachedIntersection = true;
             }
             else if (reachedIntersection && minDistance > 10 ) {
-                if (true) { //TODO: This will be toggleFeedback
+                if (mFeedback) {
                     // Check things and speak things here for feedback
                 }
             }
