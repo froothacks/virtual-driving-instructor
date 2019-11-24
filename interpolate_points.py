@@ -34,10 +34,10 @@ def interpolate(p1, p2, numPoints):
 	while frac < 1:
 		points.append([p1[0]*(1-frac)+p2[0]*frac, p1[1]*(1-frac)+p2[1]*frac])
 		frac += 1/numPoints
-	frac = 0.95
-	while frac < 1:
-		points.append([p1[0]*(1-frac)+p2[0]*frac, p1[1]*(1-frac)+p2[1]*frac])
-		frac += 0.01
+	# frac = 0.95
+	# while frac < 1:
+	# 	points.append([p1[0]*(1-frac)+p2[0]*frac, p1[1]*(1-frac)+p2[1]*frac])
+	# 	frac += 0.01
 	# print(points)
 	return points
 
