@@ -1,17 +1,14 @@
 package com.google.firebase.samples.apps.mlkit.java;
 
-import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
-import android.media.FaceDetector;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
@@ -48,13 +45,10 @@ import com.google.firebase.samples.apps.mlkit.common.GraphicOverlay;
 import com.google.firebase.samples.apps.mlkit.java.facedetection.FaceContourDetectorProcessor;
 import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.DrawerBuilder;
+import com.mikepenz.materialdrawer.interfaces.OnCheckedChangeListener;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
-import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
-import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
-import com.mikepenz.materialdrawer.model.SwitchDrawerItem;
 import com.mikepenz.materialdrawer.model.ToggleDrawerItem;
-import com.mikepenz.octicons_typeface_library.Octicons;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -71,9 +65,22 @@ import java.util.TimerTask;
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener {
     private final String TAG = "MapActivity";
 
+    private enum drawerIDs {
+        REMINDER_TOGGLE,
+        FEEDBACK_TOGGLE,
+        FREQUENCY,
+        FEEDBACK,
+        CAMERA,
+        START_DEMO_ROUTE
+    }
+
+
     private GoogleMap mMap;
     private RequestQueue queue;
     private FusedLocationProviderClient fusedLocationClient;
+
+    private boolean mReminders = true;
+    private boolean mFeedback = true;
 
     private LatLng mCurrentLocation = null;
     private LatLng mLastLocation = null;
@@ -98,7 +105,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     private MapView mapView;
 
-    TextToSpeech t1;
+    TextToSpeech tts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -114,12 +121,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 //        mapView.setVisibility(View.INVISIBLE);
 
         //if you want to update the items at a later time it is recommended to keep it in a variable
-        ToggleDrawerItem reminderToggle = new ToggleDrawerItem().withIdentifier(0).withDescription("Reminder").withChecked(false);
-        ToggleDrawerItem feedbackToggle = new ToggleDrawerItem().withIdentifier(0).withDescription("Feedback").withChecked(true);
-        PrimaryDrawerItem frequency = new PrimaryDrawerItem().withIdentifier(1).withName("Frequency");
-        PrimaryDrawerItem feedback = new PrimaryDrawerItem().withIdentifier(2).withName("Feedback after");
-        PrimaryDrawerItem camera = new PrimaryDrawerItem().withIdentifier(3).withName("Camera");
-        PrimaryDrawerItem startDemoRoute = new PrimaryDrawerItem().withIdentifier(4).withName("Start demo route");
+        ToggleDrawerItem reminderToggle = new ToggleDrawerItem().withIdentifier(drawerIDs.REMINDER_TOGGLE.ordinal()).withDescription("Reminder").withChecked(mReminders);
+        ToggleDrawerItem feedbackToggle = new ToggleDrawerItem().withIdentifier(drawerIDs.FEEDBACK_TOGGLE.ordinal()).withDescription("Feedback").withChecked(mFeedback);
+        PrimaryDrawerItem frequency = new PrimaryDrawerItem().withIdentifier(drawerIDs.FREQUENCY.ordinal()).withName("Frequency");
+        PrimaryDrawerItem feedback = new PrimaryDrawerItem().withIdentifier(drawerIDs.FEEDBACK.ordinal()).withName("Feedback after");
+        PrimaryDrawerItem camera = new PrimaryDrawerItem().withIdentifier(drawerIDs.CAMERA.ordinal()).withName("Camera");
+        PrimaryDrawerItem startDemoRoute = new PrimaryDrawerItem().withIdentifier(drawerIDs.START_DEMO_ROUTE.ordinal()).withName("Start demo route");
 
 
         //create the drawer and remember the `Drawer` result object
@@ -130,43 +137,52 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 .withCloseOnClick(true)
                 .withSelectedItem(-1)
                 .addDrawerItems(
+                        feedback,
                         reminderToggle,
                         feedbackToggle,
                         frequency,
-                        feedback,
                         camera,
                         startDemoRoute
                 )
-
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
                     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
-                        if (drawerItem.getIdentifier() == 3) {
-                            if (preview.getVisibility() == View.INVISIBLE) {
-                                preview.setVisibility(View.VISIBLE);
-                                graphicOverlay.setVisibility(View.VISIBLE);
-                            } else {
-                                preview.setVisibility(View.INVISIBLE);
-                                graphicOverlay.setVisibility(View.INVISIBLE);
-                            }
-//                            Intent intent = new Intent(getBaseContext(), LivePreviewActivity.class);
-//                            view.getContext().startActivity(intent);
-                        }
-                        if (drawerItem.getIdentifier() == 4) {
-                            setDestination("Ryerson Public School");
-                            runDemoRoute();
+                        switch (drawerIDs.values()[(int) drawerItem.getIdentifier()]) {
+                            case CAMERA:
+                                if (preview.getVisibility() == View.INVISIBLE) {
+                                    preview.setVisibility(View.VISIBLE);
+                                    graphicOverlay.setVisibility(View.VISIBLE);
+                                } else {
+                                    preview.setVisibility(View.INVISIBLE);
+                                    graphicOverlay.setVisibility(View.INVISIBLE);
+                                }
+//                                Intent intent = new Intent(getBaseContext(), LivePreviewActivity.class);
+//                                view.getContext().startActivity(intent);
+                                break;
+                            case START_DEMO_ROUTE:
+                                setDestination("Ryerson Public School");
+                                runDemoRoute();
+                                break;
                         }
                         return true;
                     }
 
                 })
-//                .withOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-//                    @Override
-//                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-//                        Log.i("material-drawer", "toggleChecked: " + isChecked);
-//                    }
-//                })
                 .build();
+
+        reminderToggle.withOnCheckedChangeListener(new OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(IDrawerItem drawerItem, CompoundButton buttonView, boolean isChecked) {
+                mReminders = isChecked;
+            }
+        });
+        feedbackToggle.withOnCheckedChangeListener(new OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(IDrawerItem drawerItem, CompoundButton buttonView, boolean isChecked) {
+                mFeedback = isChecked;
+            }
+        });
+
 
 
 
@@ -182,15 +198,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         demoRouteTimer = new Timer();
 
-        t1 = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+        tts = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
                 if(status != TextToSpeech.ERROR) {
-                    t1.setLanguage(Locale.US);
+                    tts.setLanguage(Locale.US);
                 }
             }
         });
-        faceProcessor = new FaceContourDetectorProcessor(t1);
+        faceProcessor = new FaceContourDetectorProcessor(tts);
 
         preview = findViewById(R.id.firePreview);
         if (preview == null) {
@@ -331,6 +347,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         return false;
     }
 
+    public void toastAndSpeak(int rId) {
+        Toast.makeText(this, rId, Toast.LENGTH_SHORT).show();
+        tts.speak(getString(rId), TextToSpeech.QUEUE_ADD, null);
+    }
+
     public void onLocationUpdated() {
         double minDistance = 50; // Threshold of 50
         Marker nearest = null;
@@ -347,13 +368,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 approaching = nearest;
                 reachedIntersection = false;
 
-                if (true) { //TODO: This will be toggleReminders
+                if (mReminders) {
                     if (approaching.getTitle().equals("Signalized Intersection")) {
-                        Toast.makeText(this, R.string.reminder_intersection_signaled_free, Toast.LENGTH_SHORT).show();
-                        t1.speak(getString(R.string.reminder_intersection_signaled_free), TextToSpeech.QUEUE_ADD, null);
+                        toastAndSpeak(R.string.reminder_intersection_signaled_free);
                     } else {
-                        Toast.makeText(this, R.string.reminder_intersection_unsignaled_free, Toast.LENGTH_SHORT).show();
-                        t1.speak(getString(R.string.reminder_intersection_unsignaled_free), TextToSpeech.QUEUE_ADD, null);
+                        toastAndSpeak(R.string.reminder_intersection_unsignaled_free);
                     }
                     enterIntersectionTime = (double) System.currentTimeMillis()/1000;
                 }
@@ -364,7 +383,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 reachedIntersection = true;
             }
             else if (reachedIntersection && minDistance > 10 ) {
-                if (true) { //TODO: This will be toggleFeedback
+                if (mFeedback) { //TODO: This will be toggleFeedback
                     double leftDiff = (double) System.currentTimeMillis()/1000 - enterIntersectionTime;
                     double rightDiff = (double) System.currentTimeMillis()/1000 - enterIntersectionTime;
                     Toast.makeText(
@@ -374,13 +393,13 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             .show();
                     Log.d(TAG, "ld rd ll lr" + leftDiff + " " + rightDiff + " " + faceProcessor.getLastLeft() + " " + faceProcessor.getLastRight() + ";;;;");
                     if (leftDiff < faceProcessor.getLastLeft() && rightDiff < faceProcessor.getLastRight()) {
-                        t1.speak(getString(R.string.feedback_bad_both_scan), TextToSpeech.QUEUE_ADD, null);
+                        tts.speak(getString(R.string.feedback_bad_both_scan), TextToSpeech.QUEUE_ADD, null);
                     } else if (leftDiff < faceProcessor.getLastLeft()) {
-                        t1.speak(getString(R.string.feedback_bad_left_scan), TextToSpeech.QUEUE_ADD, null);
+                        tts.speak(getString(R.string.feedback_bad_left_scan), TextToSpeech.QUEUE_ADD, null);
                     } else if (rightDiff < faceProcessor.getLastRight()) {
-                        t1.speak(getString(R.string.feedback_bad_right_scan), TextToSpeech.QUEUE_ADD, null);;
+                        tts.speak(getString(R.string.feedback_bad_right_scan), TextToSpeech.QUEUE_ADD, null);;
                     } else {
-                        t1.speak(getString(R.string.feedback_good_intersection), TextToSpeech.QUEUE_ADD, null);
+                        tts.speak(getString(R.string.feedback_good_intersection), TextToSpeech.QUEUE_ADD, null);
                     }
                     reachedIntersection = false;
                 }
@@ -402,6 +421,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 mCurrentLocation.longitude,
                 URLEncoder.encode(destination),
                 getString(R.string.google_maps_key));
+
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
                     @Override
