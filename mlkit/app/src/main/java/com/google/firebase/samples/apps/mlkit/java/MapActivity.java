@@ -656,7 +656,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         mDestination = destination;
 
         String url = String.format(Locale.US,
-                "https://maps.googleapis.com/maps/api/directions/json?origin=%.6f,%.6f&destination=%s&key=%s&mode=driving&avoid=tolls|highways|ferries&region=ca",
+                "https://maps.googleapis.com/maps/api/directions/json?origin=%.6f,%.6f&destination=%s&waypoints=via:43.007653,-81.267600&key=%s&mode=driving&avoid=tolls|highways|ferries&region=ca",
                 mCurrentLocation.latitude,
                 mCurrentLocation.longitude,
                 URLEncoder.encode(destination),
