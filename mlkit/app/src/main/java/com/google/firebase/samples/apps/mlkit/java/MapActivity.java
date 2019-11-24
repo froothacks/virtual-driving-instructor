@@ -81,6 +81,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private boolean mReminders = true;
     private boolean mFeedback = true;
 
+    private String mDestination = null;
+
     private LatLng mCurrentLocation = null;
     private LatLng mLastLocation = null;
 
@@ -180,8 +182,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 mFeedback = isChecked;
             }
         });
-
-
 
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
@@ -367,13 +367,34 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 reachedIntersection = false;
 
                 if (mReminders) {
-                    if (approaching.getTitle().equals("Signalized Intersection")) {
-                        toastAndSpeak(R.string.reminder_intersection_signaled_free);
+                    boolean isSignaled = approaching.getTitle().equals("Signalized Intersection");
+                    if (mDestination == null) {
+                        if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_free);
+                        else  toastAndSpeak(R.string.reminder_intersection_unsignaled_free);
                     } else {
-                        toastAndSpeak(R.string.reminder_intersection_unsignaled_free);
+                        Marker turn = getMatchingTurn(approaching.getPosition());
+                        Log.i(TAG, "getMatchingTurn: " + turn);
+                        if (turn != null) {
+                            if (turn.getTitle().equals("turn-left")) {
+                                if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_left);
+                                else  toastAndSpeak(R.string.reminder_intersection_unsignaled_left);
+                            }
+                            else if (turn.getTitle().equals("turn-right")) {
+                                if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_right);
+                                else  toastAndSpeak(R.string.reminder_intersection_unsignaled_right);
+                            }
+                            else {
+                                // Unknown type of turn; treat as free
+                                if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_free);
+                                else  toastAndSpeak(R.string.reminder_intersection_unsignaled_free);
+                            }
+                        } else {
+                            Log.e(TAG, "getMatchingTurn returned null");
+                            if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_straight);
+                            else  toastAndSpeak(R.string.reminder_intersection_unsignaled_straight);
+                        }
                     }
                 }
-
             }
 
             if (minDistance < 10) {
@@ -394,7 +415,18 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         return Math.sqrt(Math.pow(xDist, 2) + Math.pow(yDist, 2));
     }
 
+    public Marker getMatchingTurn(LatLng loc) {
+        for (Marker turn : turns) {
+            if (distance(loc, turn.getPosition()) < 10) {
+                return turn;
+            }
+        }
+        return null;
+    }
+
     public void setDestination(String destination) {
+        mDestination = destination;
+
         String url = String.format(Locale.US,
                 "https://maps.googleapis.com/maps/api/directions/json?origin=%.6f,%.6f&destination=%s&key=%s&mode=driving&avoid=tolls|highways|ferries&region=ca",
                 mCurrentLocation.latitude,
