@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
+import android.media.FaceDetector;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
@@ -27,6 +28,7 @@ import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptor;
@@ -38,6 +40,10 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.samples.apps.mlkit.R;
+import com.google.firebase.samples.apps.mlkit.common.CameraSource;
+import com.google.firebase.samples.apps.mlkit.common.CameraSourcePreview;
+import com.google.firebase.samples.apps.mlkit.common.GraphicOverlay;
+import com.google.firebase.samples.apps.mlkit.java.facedetection.FaceContourDetectorProcessor;
 import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.DrawerBuilder;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
@@ -52,6 +58,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.Locale;
 import java.util.Timer;
@@ -73,6 +80,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     private Marker[] demoRouteMarkers;
 
+    public static FaceContourDetectorProcessor faceProcessor;
+    public static CameraSource cameraSource = null;
+    private static final String FACE_CONTOUR = "Face Contour";
+    private CameraSourcePreview preview;
+    private GraphicOverlay graphicOverlay;
+
+    private MapView mapView;
 
     TextToSpeech t1;
 
@@ -80,6 +94,14 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
+
+//        mapView = findViewById(R.id.map);
+//        FragmentManager fm = getFragmentManager();
+//        fm.beginTransaction()
+//                .setCustomAnimations(android.R.animator.fade_in, android.R.animator.fade_out)
+//                .show(somefrag)
+//                .commit();
+//        mapView.setVisibility(View.INVISIBLE);
 
         //if you want to update the items at a later time it is recommended to keep it in a variable
         ToggleDrawerItem reminderToggle = new ToggleDrawerItem().withIdentifier(0).withDescription("Reminder").withChecked(false);
@@ -110,9 +132,15 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     @Override
                     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
                         if (drawerItem.getIdentifier() == 3) {
-                            // load tournament screen
-                            Intent intent = new Intent(getBaseContext(), LivePreviewActivity.class);
-                            view.getContext().startActivity(intent);
+                            if (preview.getVisibility() == View.INVISIBLE) {
+                                preview.setVisibility(View.VISIBLE);
+                                graphicOverlay.setVisibility(View.VISIBLE);
+                            } else {
+                                preview.setVisibility(View.INVISIBLE);
+                                graphicOverlay.setVisibility(View.INVISIBLE);
+                            }
+//                            Intent intent = new Intent(getBaseContext(), LivePreviewActivity.class);
+//                            view.getContext().startActivity(intent);
                         }
                         return true;
                     }
@@ -148,7 +176,68 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 }
             }
         });
+        faceProcessor = new FaceContourDetectorProcessor(t1);
 
+        preview = findViewById(R.id.firePreview);
+        if (preview == null) {
+            Log.d(TAG, "Preview is null");
+        }
+        preview.setVisibility(View.INVISIBLE);
+        graphicOverlay = findViewById(R.id.fireFaceOverlay);
+
+        Log.d(TAG, "this is it overlay: " + graphicOverlay);
+        if (graphicOverlay == null) {
+            Log.d(TAG, "graphicOverlay is null");
+        }
+        graphicOverlay.setVisibility(View.INVISIBLE);
+
+
+        createCameraSource("Face Contour");
+        cameraSource.setFacing(CameraSource.CAMERA_FACING_FRONT);
+        startCameraSource();
+    }
+
+    private void startCameraSource() {
+        if (cameraSource != null) {
+            try {
+                if (preview == null) {
+                    Log.d(TAG, "resume: Preview is null");
+                }
+                if (graphicOverlay == null) {
+                    Log.d(TAG, "resume: graphOverlay is null");
+                }
+                preview.start(cameraSource, graphicOverlay);
+            } catch (IOException e) {
+                Log.e(TAG, "Unable to start camera source.", e);
+                cameraSource.release();
+                cameraSource = null;
+            }
+        }
+    }
+
+    private void createCameraSource(String model) {
+        // If there's no existing cameraSource, create one.
+        if (cameraSource == null) {
+            cameraSource = new CameraSource(this, graphicOverlay);
+        }
+
+        try {
+            switch (model) {
+                case FACE_CONTOUR:
+                    Log.i(TAG, "Using Face Contour Detector Processor");
+                    cameraSource.setMachineLearningFrameProcessor(faceProcessor);
+                    break;
+                default:
+                    Log.e(TAG, "Unknown model: " + model);
+            }
+        } catch (Exception e) {
+            Log.e(TAG, "Can not create image processor: " + model, e);
+            Toast.makeText(
+                    getApplicationContext(),
+                    "Can not create image processor: " + e.getMessage(),
+                    Toast.LENGTH_LONG)
+                    .show();
+        }
     }
 
     @Override
