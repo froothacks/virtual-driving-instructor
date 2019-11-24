@@ -314,9 +314,31 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     Log.d(TAG, "Value is: " + dataSnapshot.getValue().toString());
                     database.getReference().removeValue();
                     if (res.contains("left")) {
-                        tts.speak("You have initiated a left turn", TextToSpeech.QUEUE_ADD, null);
+                        tts.speak("Make sure to check your left blind spot", TextToSpeech.QUEUE_ADD, null);
+                        new android.os.Handler().postDelayed(
+                                new Runnable() {
+                                    public void run() {
+                                        Log.i("tag","LEFT TURN TIMEOUT");
+                                        if (faceProcessor.getLastLeft() > 3) {
+                                            tts.speak("You did not scan left when changing lanes", TextToSpeech.QUEUE_ADD, null);
+                                        } else {
+                                            tts.speak("Good job", TextToSpeech.QUEUE_ADD, null);
+                                        }
+                                    }
+                                }, 3000);
                     } else {
-                        tts.speak("You have initiated a right turn", TextToSpeech.QUEUE_ADD, null);
+                        tts.speak("Make sure to check your right blind spot", TextToSpeech.QUEUE_ADD, null);
+                        new android.os.Handler().postDelayed(
+                                new Runnable() {
+                                    public void run() {
+                                        Log.i("tag","RIGHT TURN TIMEOUT");
+                                        if (faceProcessor.getLastRight() > 3) {
+                                            tts.speak("You did not scan right when changing lanes", TextToSpeech.QUEUE_ADD, null);
+                                        } else {
+                                            tts.speak("Good job", TextToSpeech.QUEUE_ADD, null);
+                                        }
+                                    }
+                                }, 3000);
                     }
                 }
 
