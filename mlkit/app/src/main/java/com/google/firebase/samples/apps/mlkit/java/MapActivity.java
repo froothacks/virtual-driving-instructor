@@ -185,7 +185,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         ToggleDrawerItem reminderToggle = new ToggleDrawerItem().withIdentifier(drawerIDs.REMINDER_TOGGLE.ordinal()).withDescription("Reminder").withChecked(mReminders);
         ToggleDrawerItem feedbackToggle = new ToggleDrawerItem().withIdentifier(drawerIDs.FEEDBACK_TOGGLE.ordinal()).withDescription("Feedback").withChecked(mFeedback);
         PrimaryDrawerItem frequency = new PrimaryDrawerItem().withIdentifier(drawerIDs.FREQUENCY.ordinal()).withName("Frequency");
-        PrimaryDrawerItem feedback = new PrimaryDrawerItem().withIdentifier(drawerIDs.FEEDBACK.ordinal()).withName("Feedback after");
+        PrimaryDrawerItem title = new PrimaryDrawerItem().withIdentifier(drawerIDs.FEEDBACK.ordinal()).withName("DriverSyde");
         PrimaryDrawerItem camera = new PrimaryDrawerItem().withIdentifier(drawerIDs.CAMERA.ordinal()).withName("Camera");
         PrimaryDrawerItem startDemoRoute = new PrimaryDrawerItem().withIdentifier(drawerIDs.START_DEMO_ROUTE.ordinal()).withName("Start demo route");
 
@@ -198,7 +198,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 .withCloseOnClick(true)
                 .withSelectedItem(-1)
                 .addDrawerItems(
-                        feedback,
+                        title,
                         reminderToggle,
                         feedbackToggle,
                         frequency,
