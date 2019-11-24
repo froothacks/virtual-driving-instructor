@@ -1,12 +1,15 @@
 package com.google.firebase.samples.apps.mlkit.java;
 
-import androidx.annotation.NonNull;
-import androidx.fragment.app.FragmentActivity;
-
+import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
+import android.view.View;
 import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.fragment.app.FragmentActivity;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -22,10 +25,13 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.samples.apps.mlkit.R;
+import com.mikepenz.materialdrawer.Drawer;
+import com.mikepenz.materialdrawer.DrawerBuilder;
+import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,8 +40,6 @@ import org.json.JSONObject;
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
-
-import android.speech.tts.TextToSpeech;
 
 public class MapActivity extends FragmentActivity implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener {
     private final String TAG = "MapActivity";
@@ -52,6 +56,44 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map);
+
+        //if you want to update the items at a later time it is recommended to keep it in a variable
+        PrimaryDrawerItem reminders= new PrimaryDrawerItem().withIdentifier(0).withName("Reminders Before");
+        PrimaryDrawerItem frequency = new PrimaryDrawerItem().withIdentifier(1).withName("Frequency");
+        PrimaryDrawerItem feedback = new PrimaryDrawerItem().withIdentifier(2).withName("Feedback after");
+        PrimaryDrawerItem camera = new PrimaryDrawerItem().withIdentifier(3).withName("Camera");
+
+
+
+        //create the drawer and remember the `Drawer` result object
+        Drawer result = new DrawerBuilder()
+                .withActivity(this)
+                //.withToolbar(toolbar)
+                .withActionBarDrawerToggle(true)
+                .withActionBarDrawerToggleAnimated(true)
+                .withCloseOnClick(true)
+                .withSelectedItem(-1)
+                .addDrawerItems(
+                        reminders,
+                        frequency,
+                        feedback,
+                        camera
+                )
+
+                .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
+                    @Override
+                    public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
+                        if (drawerItem.getIdentifier() == 3) {
+                            // load tournament screen
+                            Intent intent = new Intent(getBaseContext(), LivePreviewActivity.class);
+                            view.getContext().startActivity(intent);
+                        }
+                        return true;
+                    }
+
+                })
+                .build();
+
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -77,7 +119,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         });
 
     }
-
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
