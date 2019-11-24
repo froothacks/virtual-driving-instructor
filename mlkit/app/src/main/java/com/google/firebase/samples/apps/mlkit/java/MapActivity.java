@@ -332,7 +332,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                                                 tts.speak("Good job", TextToSpeech.QUEUE_ADD, null);
                                             }
                                         }
-                                    }, 3000);
+                                    }, 4000);
                         }
                     } else {
                         lastRightSignal = System.currentTimeMillis()/1000;
@@ -348,7 +348,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                                                 tts.speak("Good job", TextToSpeech.QUEUE_ADD, null);
                                             }
                                         }
-                                    }, 3000);
+                                    }, 4000);
                         }
 
                     }
@@ -547,7 +547,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                                                     tts.speak("Good job signalling left", TextToSpeech.QUEUE_ADD, null);
                                                 }
                                             }
-                                        }, 3000);
+                                        }, 4000);
                             }
                             else if (turn.getTitle().equals("turn-right")) {
                                 if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_right);
@@ -563,7 +563,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                                                     tts.speak("Good job signalling right", TextToSpeech.QUEUE_ADD, null);
                                                 }
                                             }
-                                        }, 3000);
+                                        }, 4000);
                             }
                             else {
                                 // Unknown type of turn; treat as free
