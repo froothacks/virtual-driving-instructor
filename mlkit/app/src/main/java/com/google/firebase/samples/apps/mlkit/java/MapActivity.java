@@ -1,13 +1,8 @@
 package com.google.firebase.samples.apps.mlkit.java;
 
-import android.content.Intent;
-import androidx.annotation.NonNull;
-import androidx.core.content.ContextCompat;
-import androidx.fragment.app.FragmentActivity;
-
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
@@ -15,9 +10,10 @@ import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.View;
-import android.widget.Toast;
+import android.widget.CompoundButton;
 
 import androidx.annotation.NonNull;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import com.android.volley.DefaultRetryPolicy;
@@ -46,14 +42,17 @@ import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.DrawerBuilder;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
+import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
+import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
+import com.mikepenz.materialdrawer.model.SwitchDrawerItem;
+import com.mikepenz.materialdrawer.model.ToggleDrawerItem;
+import com.mikepenz.octicons_typeface_library.Octicons;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.net.URLEncoder;
-import java.util.Locale;
-
 import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -83,7 +82,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         setContentView(R.layout.activity_map);
 
         //if you want to update the items at a later time it is recommended to keep it in a variable
-        PrimaryDrawerItem reminders= new PrimaryDrawerItem().withIdentifier(0).withName("Reminders Before");
+        ToggleDrawerItem reminderToggle = new ToggleDrawerItem().withIdentifier(0).withDescription("Reminder").withChecked(false);
+        ToggleDrawerItem feedbackToggle = new ToggleDrawerItem().withIdentifier(0).withDescription("Feedback").withChecked(true);
         PrimaryDrawerItem frequency = new PrimaryDrawerItem().withIdentifier(1).withName("Frequency");
         PrimaryDrawerItem feedback = new PrimaryDrawerItem().withIdentifier(2).withName("Feedback after");
         PrimaryDrawerItem camera = new PrimaryDrawerItem().withIdentifier(3).withName("Camera");
@@ -93,16 +93,17 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
         //create the drawer and remember the `Drawer` result object
         Drawer result = new DrawerBuilder()
                 .withActivity(this)
-                //.withToolbar(toolbar)
                 .withActionBarDrawerToggle(true)
                 .withActionBarDrawerToggleAnimated(true)
                 .withCloseOnClick(true)
                 .withSelectedItem(-1)
                 .addDrawerItems(
-                        reminders,
+                        reminderToggle,
+                        feedbackToggle,
                         frequency,
                         feedback,
                         camera
+
                 )
 
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
@@ -117,7 +118,15 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     }
 
                 })
+//                .withOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+//                    @Override
+//                    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+//                        Log.i("material-drawer", "toggleChecked: " + isChecked);
+//                    }
+//                })
                 .build();
+
+
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
