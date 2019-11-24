@@ -33,8 +33,9 @@ public class FaceContourDetectorProcessor extends VisionProcessorBase<List<Fireb
     public boolean rightFaceTurn = false;
     public boolean eyesClosed = false;
     public boolean notSmiling = false;
-
-
+    public double lastLeft = (double)System.currentTimeMillis();
+    public double lastCenter = (double)System.currentTimeMillis();
+    public double lastRight = (double)System.currentTimeMillis();
 
     private final FirebaseVisionFaceDetector detector;
 
@@ -61,6 +62,16 @@ public class FaceContourDetectorProcessor extends VisionProcessorBase<List<Fireb
     @Override
     protected Task<List<FirebaseVisionFace>> detectInImage(FirebaseVisionImage image) {
         return detector.detectInImage(image);
+    }
+
+    public double getLastLeft() {
+        return (double)System.currentTimeMillis()-lastLeft;
+    }
+    public double getLastRight() {
+        return (double)System.currentTimeMillis()-lastRight;
+    }
+    public double getLastCenter() {
+        return (double)System.currentTimeMillis()-lastCenter;
     }
 
     public FirebaseVisionPoint centroid(List<FirebaseVisionPoint> points)  {
@@ -109,13 +120,16 @@ public class FaceContourDetectorProcessor extends VisionProcessorBase<List<Fireb
             Float diff = centerEyePoint.getX() - centerPoint.getX();
             if (diff > boxWidth/10 && !leftFaceTurn) {
                 leftFaceTurn = true;
+                lastLeft = (double)System.currentTimeMillis();
                 Log.d(TAG, "LOOKING LEFT LEFT LEFT LEFT LEFT");
             } else if (diff < -(boxWidth/10) && !rightFaceTurn) {
                 rightFaceTurn = true;
+                lastRight = (double)System.currentTimeMillis();
                 Log.d(TAG, "LOOKING RIGHT RIGHT RIGHT RIGHT RIGHT");
             } else {
                 leftFaceTurn = false;
                 rightFaceTurn = false;
+                lastCenter = (double)System.currentTimeMillis();
                 Log.d(TAG, "LOOKING NOWHERE");
             }
             if (face.getLeftEyeOpenProbability() < 0.5 && face.getLeftEyeOpenProbability() < 0.5 && !eyesClosed ){
