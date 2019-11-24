@@ -31,6 +31,12 @@ import java.util.List;
 public class FaceContourDetectorProcessor extends VisionProcessorBase<List<FirebaseVisionFace>> {
 
     private static final String TAG = "FaceContourDetectorProc";
+    public boolean leftTurn = false;
+    public boolean rightTurn = false;
+    public boolean eyesClosed = false;
+    public boolean notSmiling = false;
+
+
 
     private final FirebaseVisionFaceDetector detector;
 
@@ -39,6 +45,7 @@ public class FaceContourDetectorProcessor extends VisionProcessorBase<List<Fireb
                 new FirebaseVisionFaceDetectorOptions.Builder()
                         .setPerformanceMode(FirebaseVisionFaceDetectorOptions.FAST)
                         .setContourMode(FirebaseVisionFaceDetectorOptions.ALL_CONTOURS)
+                        .setClassificationMode(FirebaseVisionFaceDetectorOptions.ALL_CLASSIFICATIONS)
                         .build();
 
         detector = FirebaseVision.getInstance().getVisionFaceDetector(options);
@@ -90,16 +97,33 @@ public class FaceContourDetectorProcessor extends VisionProcessorBase<List<Fireb
                     centroid(face.getContour(FirebaseVisionFaceContour.LEFT_EYE).getPoints()),
                     centroid(face.getContour(FirebaseVisionFaceContour.RIGHT_EYE).getPoints())));
 
-            Log.d(TAG, "CENTER " + centerPoint.toString() + " CENTER EYE " + centerEyePoint.toString());
-            Log.d(TAG, "IS RIGHT: " + (centerPoint.getX() < centerEyePoint.getX()));
+           // Log.d(TAG, "CENTER " + centerPoint.toString() + " CENTER EYE " + centerEyePoint.toString());
+            //Log.d(TAG, "IS RIGHT: " + (centerPoint.getX() < centerEyePoint.getX()));
             Float diff = centerEyePoint.getX() - centerPoint.getX();
-            if (diff > boxWidth/10) {
+            if (diff > boxWidth/10 && !leftTurn) {
+                leftTurn = true;
                 Log.d(TAG, "LOOKING LEFT LEFT LEFT LEFT LEFT");
-            } else if (diff < -(boxWidth/10)) {
+            } else if (diff < -(boxWidth/10) && !rightTurn) {
+                rightTurn = true;
                 Log.d(TAG, "LOOKING RIGHT RIGHT RIGHT RIGHT RIGHT");
             } else {
+                leftTurn = false;
+                rightTurn = false;
                 Log.d(TAG, "LOOKING NOWHERE");
             }
+            if (face.getLeftEyeOpenProbability() < 0.5 && face.getLeftEyeOpenProbability() < 0.5 && !eyesClosed ){
+                Log.d(TAG, "eyes closed");
+                eyesClosed = true;
+            }
+                else {
+                Log.d(TAG, "eyes open");
+                eyesClosed = false;
+            }
+            if (face.getSmilingProbability() < 0.5 && !notSmiling) {
+                Log.d(TAG, "**** Smiling ***");
+                notSmiling = true;
+            }
+
         }
         graphicOverlay.postInvalidate();
     }
