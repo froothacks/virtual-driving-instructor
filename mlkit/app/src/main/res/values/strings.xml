@@ -18,8 +18,8 @@
 
     <string name="reminder_intersection_signaled_free">Remember to scan left and right before entering the intersection.</string>
     <string name="reminder_intersection_signaled_straight">Remember to scan left and right before proceeding through the intersection.</string>
-    <string name="reminder_intersection_signaled_left">Remember to signal left, and scan for oncoming traffic before turning left.</string>
-    <string name="reminder_intersection_signaled_right">Remember to signal right. If the light is red, remember to come to a full stop before turning.</string>
+    <string name="reminder_intersection_signaled_left">Remember to signal left, and scan for oncoming traffic before turning.</string>
+    <string name="reminder_intersection_signaled_right">Remember to signal right. If the light is red, stop before turning.</string>
     <string name="reminder_intersection_unsignaled_free">Remember to come to a complete stop at the stop sign.</string>
     <string name="reminder_intersection_unsignaled_straight">Remember to come to a complete stop at the stop sign.</string>
     <string name="reminder_intersection_unsignaled_left">Remember to signal left, and come to a complete stop at the stop sign.</string>
@@ -27,7 +27,7 @@
     <string name="reminder_lane_change_left">Remember to check your blind spot.</string>
     <string name="reminder_lane_change_right">Remember to check your blind spot.</string>
 
-    <string name="feedback_good_intersection">Good job!</string>
+    <string name="feedback_good_intersection">Good job scanning!</string>
     <string name="feedback_bad_left_scan">You failed to scan left!</string>
     <string name="feedback_bad_right_scan">You failed to scan right!</string>
     <string name="feedback_bad_both_scan">You failed to scan both left and right!</string>
