@@ -1,22 +1,18 @@
 package com.google.firebase.samples.apps.mlkit.java;
 
-import android.content.Intent;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.drawable.Drawable;
 import android.location.Location;
-import android.media.FaceDetector;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
 import android.view.View;
-import android.widget.CompoundButton;
 import android.widget.Toast;
 
 import com.android.volley.DefaultRetryPolicy;
@@ -50,11 +46,7 @@ import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.DrawerBuilder;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
-import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
-import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
-import com.mikepenz.materialdrawer.model.SwitchDrawerItem;
 import com.mikepenz.materialdrawer.model.ToggleDrawerItem;
-import com.mikepenz.octicons_typeface_library.Octicons;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -96,7 +88,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     private MapView mapView;
 
-    TextToSpeech t1;
+    TextToSpeech tts;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,13 +103,23 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 //                .commit();
 //        mapView.setVisibility(View.INVISIBLE);
 
+        private enum drawerIDs {
+            REMINDER_TOGGLE,
+            FEEDBACK_TOGGLE,
+            FREQUENCY,
+            FEEDBACK,
+            CAMERA,
+            START_DEMO_ROUTE
+        }
+
         //if you want to update the items at a later time it is recommended to keep it in a variable
-        ToggleDrawerItem reminderToggle = new ToggleDrawerItem().withIdentifier(0).withDescription("Reminder").withChecked(false);
-        ToggleDrawerItem feedbackToggle = new ToggleDrawerItem().withIdentifier(0).withDescription("Feedback").withChecked(true);
-        PrimaryDrawerItem frequency = new PrimaryDrawerItem().withIdentifier(1).withName("Frequency");
-        PrimaryDrawerItem feedback = new PrimaryDrawerItem().withIdentifier(2).withName("Feedback after");
-        PrimaryDrawerItem camera = new PrimaryDrawerItem().withIdentifier(3).withName("Camera");
-        PrimaryDrawerItem startDemoRoute = new PrimaryDrawerItem().withIdentifier(4).withName("Start demo route");
+        ToggleDrawerItem reminderToggle = new ToggleDrawerItem().withIdentifier(drawerIDs.REMINDER_TOGGLE.ordinal()).withDescription("Reminder").withChecked(false);
+        ToggleDrawerItem feedbackToggle = new ToggleDrawerItem().withIdentifier(drawerIDs.FEEDBACK_TOGGLE.ordinal()).withDescription("Feedback").withChecked(true);
+        PrimaryDrawerItem frequency = new PrimaryDrawerItem().withIdentifier(drawerIDs.FREQUENCY.ordinal()).withName("Frequency");
+        PrimaryDrawerItem feedback = new PrimaryDrawerItem().withIdentifier(drawerIDs.FEEDBACK.ordinal()).withName("Feedback after");
+        PrimaryDrawerItem camera = new PrimaryDrawerItem().withIdentifier(drawerIDs.CAMERA.ordinal()).withName("Camera");
+        PrimaryDrawerItem startDemoRoute = new PrimaryDrawerItem().withIdentifier(drawerIDs.START_DEMO_ROUTE.ordinal()).withName("Start demo route");
+
 
 
         //create the drawer and remember the `Drawer` result object
@@ -139,20 +141,22 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
                     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
-                        if (drawerItem.getIdentifier() == 3) {
-                            if (preview.getVisibility() == View.INVISIBLE) {
-                                preview.setVisibility(View.VISIBLE);
-                                graphicOverlay.setVisibility(View.VISIBLE);
-                            } else {
-                                preview.setVisibility(View.INVISIBLE);
-                                graphicOverlay.setVisibility(View.INVISIBLE);
-                            }
-//                            Intent intent = new Intent(getBaseContext(), LivePreviewActivity.class);
-//                            view.getContext().startActivity(intent);
-                        }
-                        if (drawerItem.getIdentifier() == 4) {
-                            setDestination("Ryerson Public School");
-                            runDemoRoute();
+                        switch (drawerIDs.values()[(int) drawerItem.getIdentifier()]) {
+                            case REMINDER_TOGGLE:
+                                if (preview.getVisibility() == View.INVISIBLE) {
+                                    preview.setVisibility(View.VISIBLE);
+                                    graphicOverlay.setVisibility(View.VISIBLE);
+                                } else {
+                                    preview.setVisibility(View.INVISIBLE);
+                                    graphicOverlay.setVisibility(View.INVISIBLE);
+                                }
+//                                Intent intent = new Intent(getBaseContext(), LivePreviewActivity.class);
+//                                view.getContext().startActivity(intent);
+                                break;
+                            case START_DEMO_ROUTE:
+                                setDestination("Ryerson Public School");
+                                runDemoRoute();
+                                break;
                         }
                         return true;
                     }
@@ -180,15 +184,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         demoRouteTimer = new Timer();
 
-        t1 = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
+        tts = new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
             @Override
             public void onInit(int status) {
                 if(status != TextToSpeech.ERROR) {
-                    t1.setLanguage(Locale.US);
+                    tts.setLanguage(Locale.US);
                 }
             }
         });
-        faceProcessor = new FaceContourDetectorProcessor(t1);
+        faceProcessor = new FaceContourDetectorProcessor(tts);
 
         preview = findViewById(R.id.firePreview);
         if (preview == null) {
@@ -329,6 +333,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         return false;
     }
 
+    public void toastAndSpeak(int rId) {
+        Toast.makeText(this, rId, Toast.LENGTH_SHORT).show();
+        tts.speak(getString(rId), TextToSpeech.QUEUE_ADD, null);
+    }
+
     public void onLocationUpdated() {
         double minDistance = 50; // Threshold of 50
         Marker nearest = null;
@@ -345,13 +354,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 approaching = nearest;
                 reachedIntersection = false;
 
-                if (true) { //TODO: This will be toggleReminders
+                if (true) {
                     if (approaching.getTitle().equals("Signalized Intersection")) {
-                        Toast.makeText(this, R.string.reminder_intersection_signaled_free, Toast.LENGTH_SHORT).show();
-                        t1.speak(getString(R.string.reminder_intersection_signaled_free), TextToSpeech.QUEUE_ADD, null);
+                        toastAndSpeak(R.string.reminder_intersection_signaled_free);
                     } else {
-                        Toast.makeText(this, R.string.reminder_intersection_unsignaled_free, Toast.LENGTH_SHORT).show();
-                        t1.speak(getString(R.string.reminder_intersection_unsignaled_free), TextToSpeech.QUEUE_ADD, null);
+                        toastAndSpeak(R.string.reminder_intersection_unsignaled_free);
                     }
                 }
 
@@ -382,6 +389,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 mCurrentLocation.longitude,
                 URLEncoder.encode(destination),
                 getString(R.string.google_maps_key));
+
         StringRequest stringRequest = new StringRequest(Request.Method.GET, url,
                 new Response.Listener<String>() {
                     @Override
