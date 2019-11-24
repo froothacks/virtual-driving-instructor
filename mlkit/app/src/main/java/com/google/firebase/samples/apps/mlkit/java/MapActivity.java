@@ -54,6 +54,9 @@ import com.mikepenz.materialdrawer.Drawer;
 import com.mikepenz.materialdrawer.DrawerBuilder;
 import com.mikepenz.materialdrawer.interfaces.OnCheckedChangeListener;
 import com.mikepenz.materialdrawer.model.PrimaryDrawerItem;
+import com.mikepenz.materialdrawer.model.SecondaryDrawerItem;
+import com.mikepenz.materialdrawer.model.SecondarySwitchDrawerItem;
+import com.mikepenz.materialdrawer.model.SwitchDrawerItem;
 import com.mikepenz.materialdrawer.model.interfaces.IDrawerItem;
 import com.mikepenz.materialdrawer.model.ToggleDrawerItem;
 
@@ -85,16 +88,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private final String TAG = "MapActivity";
 
     private final int DEMO_ROUTE_PERIOD = 200;
-
-    private enum drawerIDs {
-        REMINDER_TOGGLE,
-        FEEDBACK_TOGGLE,
-        FREQUENCY,
-        FEEDBACK,
-        CAMERA,
-        START_DEMO_ROUTE
-    }
-
 
     private GoogleMap mMap;
     private RequestQueue queue;
@@ -132,6 +125,9 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     private GraphicOverlay graphicOverlay;
 
     private MapView mapView;
+
+    private Drawer mDrawer;
+    private boolean mDataPointsVisible = false;
 
     TextToSpeech tts;
 
@@ -173,6 +169,17 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     }
 // [END post_class]
 
+    private enum drawerIDs {
+        TITLE,
+        REMINDER_TOGGLE,
+        FEEDBACK_TOGGLE,
+        DEMO,
+        CAMERA_VIEW,
+        DATA_POINTS,
+        START_DEMO_ROUTE
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -187,16 +194,18 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 //        mapView.setVisibility(View.INVISIBLE);
 
         //if you want to update the items at a later time it is recommended to keep it in a variable
-        ToggleDrawerItem reminderToggle = new ToggleDrawerItem().withIdentifier(drawerIDs.REMINDER_TOGGLE.ordinal()).withDescription("Reminder").withChecked(mReminders);
-        ToggleDrawerItem feedbackToggle = new ToggleDrawerItem().withIdentifier(drawerIDs.FEEDBACK_TOGGLE.ordinal()).withDescription("Feedback").withChecked(mFeedback);
-        PrimaryDrawerItem frequency = new PrimaryDrawerItem().withIdentifier(drawerIDs.FREQUENCY.ordinal()).withName("Frequency");
-        PrimaryDrawerItem title = new PrimaryDrawerItem().withIdentifier(drawerIDs.FEEDBACK.ordinal()).withName("DriverSyde");
-        PrimaryDrawerItem camera = new PrimaryDrawerItem().withIdentifier(drawerIDs.CAMERA.ordinal()).withName("Camera");
-        PrimaryDrawerItem startDemoRoute = new PrimaryDrawerItem().withIdentifier(drawerIDs.START_DEMO_ROUTE.ordinal()).withName("Start demo route");
+        PrimaryDrawerItem title = new PrimaryDrawerItem().withIdentifier(drawerIDs.TITLE.ordinal()).withName("DriverSyde");
+        SecondarySwitchDrawerItem reminderToggle = new SecondarySwitchDrawerItem().withIdentifier(drawerIDs.REMINDER_TOGGLE.ordinal()).withName("Proactive reminders").withChecked(mReminders);
+        SecondarySwitchDrawerItem feedbackToggle = new SecondarySwitchDrawerItem().withIdentifier(drawerIDs.FEEDBACK_TOGGLE.ordinal()).withName("Immediate feedback").withChecked(mFeedback);
+        PrimaryDrawerItem demoHeading = new PrimaryDrawerItem().withIdentifier(drawerIDs.DEMO.ordinal()).withName("Demo");
+        SecondaryDrawerItem cameraView = new SecondaryDrawerItem().withIdentifier(drawerIDs.CAMERA_VIEW.ordinal()).withName("Camera view");
+        SecondaryDrawerItem dataPoints = new SecondaryDrawerItem().withIdentifier(drawerIDs.DATA_POINTS.ordinal()).withName("Toggle data points");
+        SecondaryDrawerItem startDemoRoute = new SecondaryDrawerItem().withIdentifier(drawerIDs.START_DEMO_ROUTE.ordinal()).withName("Start demo route");
+
 
 
         //create the drawer and remember the `Drawer` result object
-        Drawer result = new DrawerBuilder()
+        mDrawer = new DrawerBuilder()
                 .withActivity(this)
                 .withActionBarDrawerToggle(true)
                 .withActionBarDrawerToggleAnimated(true)
@@ -206,15 +215,16 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                         title,
                         reminderToggle,
                         feedbackToggle,
-                        frequency,
-                        camera,
+                        demoHeading,
+                        cameraView,
+                        dataPoints,
                         startDemoRoute
                 )
                 .withOnDrawerItemClickListener(new Drawer.OnDrawerItemClickListener() {
                     @Override
                     public boolean onItemClick(View view, int position, IDrawerItem drawerItem) {
                         switch (drawerIDs.values()[(int) drawerItem.getIdentifier()]) {
-                            case CAMERA:
+                            case CAMERA_VIEW:
                                 if (preview.getVisibility() == View.INVISIBLE) {
                                     preview.setVisibility(View.VISIBLE);
                                     graphicOverlay.setVisibility(View.VISIBLE);
@@ -224,10 +234,22 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                                 }
 //                                Intent intent = new Intent(getBaseContext(), LivePreviewActivity.class);
 //                                view.getContext().startActivity(intent);
+                                mDrawer.closeDrawer();
+                                break;
+                            case DATA_POINTS:
+                                mDataPointsVisible = !mDataPointsVisible;
+                                for (Marker m : intersections) {
+                                    m.setVisible(mDataPointsVisible);
+                                }
+                                for (Marker m : turns) {
+                                    m.setVisible(mDataPointsVisible);
+                                }
+                                mDrawer.closeDrawer();
                                 break;
                             case START_DEMO_ROUTE:
                                 setDestination("Ryerson Public School");
                                 runDemoRoute();
+                                mDrawer.closeDrawer();
                                 break;
                         }
                         return true;
@@ -441,8 +463,13 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                                 LatLng pos = new LatLng(geometry.getDouble("y"), geometry.getDouble("x"));
                                 if (!((pos.latitude == 43.00476696908109 && pos.longitude == -81.25795717969847))) {
                                        // || (pos.latitude == 43.00907802382399 && pos.longitude == -81.26129407898745))) {
+                                    float hue = (type.equals("Signalized Intersection")) ?
+                                            BitmapDescriptorFactory.HUE_GREEN :
+                                            BitmapDescriptorFactory.HUE_ORANGE;
                                     Marker m = mMap.addMarker(new MarkerOptions()
-                                            .position(pos).title(type));
+                                            .position(pos).title(type)
+                                            .icon(BitmapDescriptorFactory.defaultMarker(hue)));
+                                    m.setVisible(mDataPointsVisible);
                                     intersections.add(m);
                                 }
                             }
@@ -670,7 +697,8 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
                                 Marker m = mMap.addMarker(new MarkerOptions()
                                         .position(pos).title(maneuver)
-                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN)));
+                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
+                                m.setVisible(mDataPointsVisible);
                                 turns.add(m);
                             }
                         } catch (JSONException e) {
@@ -715,6 +743,11 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                     .icon(bitmapDescriptorFromVector(this, R.drawable.route_dot_24dp))
                     .flat(true));
             demoRouteMarkers[i] = m;
+
+            if (i == demoRoute.length - 1) {
+                mMap.addMarker(new MarkerOptions().position(pos));
+
+            }
         }
 
         demoRouteTimer.scheduleAtFixedRate(new TimerTask() {
@@ -741,7 +774,7 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                                 .bearing(getBearing(mLastLocation, mCurrentLocation))
                                 .tilt(45)
                                 .zoom(18)
-                                .build()), DEMO_ROUTE_PERIOD*2, null);
+                                .build()), DEMO_ROUTE_PERIOD*3, null);
 
                     }
                 });
