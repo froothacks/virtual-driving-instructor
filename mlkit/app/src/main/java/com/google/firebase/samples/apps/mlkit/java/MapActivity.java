@@ -117,6 +117,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     private int demoRouteIndex = 0;
     private Timer demoRouteTimer;
+    private double lastLeftSignal = 0;
+    private double lastRightSignal = 0;
 
     private Marker[] demoRouteMarkers;
 
@@ -314,31 +316,38 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     Log.d(TAG, "Value is: " + dataSnapshot.getValue().toString());
                     database.getReference().removeValue();
                     if (res.contains("left")) {
-                        tts.speak("Make sure to check your left blind spot", TextToSpeech.QUEUE_ADD, null);
-                        new android.os.Handler().postDelayed(
-                                new Runnable() {
-                                    public void run() {
-                                        Log.i("tag","LEFT TURN TIMEOUT");
-                                        if (faceProcessor.getLastLeft() > 3) {
-                                            tts.speak("You did not scan left when changing lanes", TextToSpeech.QUEUE_ADD, null);
-                                        } else {
-                                            tts.speak("Good job", TextToSpeech.QUEUE_ADD, null);
+                        lastLeftSignal = System.currentTimeMillis()/1000;
+                        if (!reachedIntersection) {
+                            tts.speak("Make sure to check your left blind spot", TextToSpeech.QUEUE_ADD, null);
+                            new android.os.Handler().postDelayed(
+                                    new Runnable() {
+                                        public void run() {
+                                            Log.i("tag","LEFT TURN TIMEOUT");
+                                            if (faceProcessor.getLastLeft() > 3) {
+                                                tts.speak("You did not scan left", TextToSpeech.QUEUE_ADD, null);
+                                            } else {
+                                                tts.speak("Good job", TextToSpeech.QUEUE_ADD, null);
+                                            }
                                         }
-                                    }
-                                }, 3000);
+                                    }, 3000);
+                        }
                     } else {
-                        tts.speak("Make sure to check your right blind spot", TextToSpeech.QUEUE_ADD, null);
-                        new android.os.Handler().postDelayed(
-                                new Runnable() {
-                                    public void run() {
-                                        Log.i("tag","RIGHT TURN TIMEOUT");
-                                        if (faceProcessor.getLastRight() > 3) {
-                                            tts.speak("You did not scan right when changing lanes", TextToSpeech.QUEUE_ADD, null);
-                                        } else {
-                                            tts.speak("Good job", TextToSpeech.QUEUE_ADD, null);
+                        lastRightSignal = System.currentTimeMillis()/1000;
+                        if (!reachedIntersection) {
+                            tts.speak("Make sure to check your right blind spot", TextToSpeech.QUEUE_ADD, null);
+                            new android.os.Handler().postDelayed(
+                                    new Runnable() {
+                                        public void run() {
+                                            Log.i("tag","RIGHT TURN TIMEOUT");
+                                            if (faceProcessor.getLastRight() > 3) {
+                                                tts.speak("You did not scan right", TextToSpeech.QUEUE_ADD, null);
+                                            } else {
+                                                tts.speak("Good job", TextToSpeech.QUEUE_ADD, null);
+                                            }
                                         }
-                                    }
-                                }, 3000);
+                                    }, 3000);
+                        }
+
                     }
                 }
 
@@ -487,8 +496,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         tts.speak(getString(rId), TextToSpeech.QUEUE_ADD, null);
     }
 
+    private double getLastLeftSignal() {
+        return (double) System.currentTimeMillis()/1000 - lastLeftSignal;
+    }
+    private double getLastRightSignal() {
+        return (double) System.currentTimeMillis()/1000 - lastRightSignal;
+    }
+
     public void onLocationUpdated() {
-        double minDistance = 40; // Threshold
+        double minDistance = 60; // Threshold
         Marker nearest = null;
         for (Marker intersection : intersections) {
             double dist = distance(mCurrentLocation, intersection.getPosition());
@@ -517,10 +533,34 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             if (turn.getTitle().equals("turn-left")) {
                                 if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_left);
                                 else  toastAndSpeak(R.string.reminder_intersection_unsignaled_left);
+//                                tts.speak("Make sure to check your left blind spot", TextToSpeech.QUEUE_ADD, null);
+                                new android.os.Handler().postDelayed(
+                                        new Runnable() {
+                                            public void run() {
+                                                Log.i("tag","LEFT TURN TIMEOUT");
+                                                if (getLastLeftSignal() > 3) {
+                                                    tts.speak("You did not signal left for this turn", TextToSpeech.QUEUE_ADD, null);
+                                                } else {
+                                                    tts.speak("Good job signalling left", TextToSpeech.QUEUE_ADD, null);
+                                                }
+                                            }
+                                        }, 3000);
                             }
                             else if (turn.getTitle().equals("turn-right")) {
                                 if (isSignaled)  toastAndSpeak(R.string.reminder_intersection_signaled_right);
                                 else  toastAndSpeak(R.string.reminder_intersection_unsignaled_right);
+//                                tts.speak("Make sure to check your right blind spot", TextToSpeech.QUEUE_ADD, null);
+                                new android.os.Handler().postDelayed(
+                                        new Runnable() {
+                                            public void run() {
+                                                Log.i("tag","RIGHT TURN TIMEOUT");
+                                                if (getLastRightSignal() > 3) {
+                                                    tts.speak("You did not signal right for this turn", TextToSpeech.QUEUE_ADD, null);
+                                                } else {
+                                                    tts.speak("Good job signalling right", TextToSpeech.QUEUE_ADD, null);
+                                                }
+                                            }
+                                        }, 3000);
                             }
                             else {
                                 // Unknown type of turn; treat as free
@@ -702,7 +742,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     }
                 });
             }
-        },0,100);
+        },0,150);
     }
 
 }
