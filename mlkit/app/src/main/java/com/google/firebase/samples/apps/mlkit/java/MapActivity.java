@@ -63,11 +63,21 @@ import org.w3c.dom.Text;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
+
+import com.google.firebase.database.Exclude;
+import com.google.firebase.database.IgnoreExtraProperties;
+
+import java.util.HashMap;
+import java.util.Map;
+
+
 
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleMap.OnMyLocationButtonClickListener {
     private final String TAG = "MapActivity";
@@ -117,6 +127,44 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private MapView mapView;
 
     TextToSpeech tts;
+
+    // [START post_class]
+    @IgnoreExtraProperties
+    private class Signal {
+
+        public String uid;
+        public String coreid;
+        public String data;
+        public String event;
+        public Date published_at;
+
+        public Signal() {
+            // Default constructor required for calls to DataSnapshot.getValue(Post.class)
+        }
+
+        public Signal(String uid, String coreid, String event, Date published_at) {
+            this.uid = uid;
+            this.coreid = coreid;
+            this.data = data;
+            this.event = event;
+            this.published_at = published_at;
+        }
+
+        // [START post_to_map]
+        @Exclude
+        public Map<String, Object> toMap() {
+            HashMap<String, Object> result = new HashMap<>();
+            result.put("uid", uid);
+            result.put("coreid", coreid);
+            result.put("data", data);
+            result.put("event", event);
+            result.put("published_at", published_at);
+            return result;
+        }
+        // [END post_to_map]
+
+    }
+// [END post_class]
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -235,16 +283,47 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         cameraSource.setFacing(CameraSource.CAMERA_FACING_FRONT);
         startCameraSource();
 
-        FirebaseDatabase database = FirebaseDatabase.getInstance("https://virtual-driving-instruct-91a0b.firebaseio.com/");
-        DatabaseReference ref = database.getReference("signal");
+        final FirebaseDatabase database = FirebaseDatabase.getInstance("https://virtual-driving-instruct-91a0b.firebaseio.com/");
+        Log.i(TAG, "firebasedatabase:" + database);
+//        database.getReference().addValueEventListener(new ValueEventListener() {
+//            @Override
+//            public void onDataChange(DataSnapshot dataSnapshot) {
+//                // Get object and use the values to update the UI
+//                String value = dataSnapshot.getValue(String.class);
+//                // Do something with the data
+//                Log.w(TAG, "NEWVAL" + value);
+//            }
+//
+//            @Override
+//            public void onCancelled(DatabaseError databaseError) {
+//            }
+//        });
+        DatabaseReference ref = database.getReference().child("signal");
 
         ref.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
                 // This method is called once with the initial value and again
                 // whenever data at this location is updated.
-                String value = dataSnapshot.getValue(String.class);
-                Log.d(TAG, "Value is: " + value);
+//                Signal value = dataSnapshot.getValue(Signal.class);
+//                Log.d(TAG, "Value is: " + value);
+                if (dataSnapshot.getValue() != null) {
+                    String res = dataSnapshot.getValue().toString();
+                    Log.d(TAG, "Value is: " + dataSnapshot.getValue().toString());
+                    database.getReference().removeValue();
+                    if (res.contains("left")) {
+                        tts.speak("You have initiated a left turn", TextToSpeech.QUEUE_ADD, null);
+                    } else {
+                        tts.speak("You have initiated a right turn", TextToSpeech.QUEUE_ADD, null);
+                    }
+                }
+
+                //                Log.d(TAG, "val: " + dataSnapshot.child("signal"));
+//                for (DataSnapshot messageSnapshot: dataSnapshot.getValue().getChildren()) {
+//                    String name = (String) messageSnapshot.child("name").getValue();
+//                    String message = (String) messageSnapshot.child("message").getValue();
+//                    Log.d(TAG, "name mess" + name + " " + message);
+//                }
             }
 
             @Override
