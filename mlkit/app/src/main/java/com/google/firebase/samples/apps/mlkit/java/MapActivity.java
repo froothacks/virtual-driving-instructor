@@ -46,8 +46,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
 
     private Location mCurrentLocation;
 
-    TextToSpeech t1;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,15 +65,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
                 Log.i("tag", "A timed event.");
             }
         },0,100);
-        t1=new TextToSpeech(getApplicationContext(), new TextToSpeech.OnInitListener() {
-            @Override
-            public void onInit(int status) {
-                if(status != TextToSpeech.ERROR) {
-                    t1.setLanguage(Locale.US);
-                }
-            }
-        });
-
     }
 
 
@@ -141,9 +130,6 @@ public class MapActivity extends FragmentActivity implements OnMapReadyCallback,
     @Override
     public boolean onMyLocationButtonClick() {
         Toast.makeText(this, "MyLocation button clicked", Toast.LENGTH_SHORT).show();
-        t1.speak("HELLO FROM THE OTHER SIDE 1", TextToSpeech.QUEUE_FLUSH, null);
-        t1.speak("HELLO FROM THE OTHER SIDE 2", TextToSpeech.QUEUE_FLUSH, null);
-        t1.speak("HELLO FROM THE OTHER SIDE 3", TextToSpeech.QUEUE_FLUSH, null);
 
         // Return false so that we don't consume the event and the default behavior still occurs
         // (the camera animates to the user's current position).

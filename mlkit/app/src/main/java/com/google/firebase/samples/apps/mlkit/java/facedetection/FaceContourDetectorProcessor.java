@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import android.speech.tts.TextToSpeech;
 import android.util.Log;
 
 import com.google.android.gms.tasks.Task;
@@ -17,11 +18,13 @@ import com.google.firebase.ml.vision.face.FirebaseVisionFaceDetectorOptions;
 import com.google.firebase.samples.apps.mlkit.common.CameraImageGraphic;
 import com.google.firebase.samples.apps.mlkit.common.FrameMetadata;
 import com.google.firebase.samples.apps.mlkit.common.GraphicOverlay;
+import com.google.firebase.samples.apps.mlkit.java.MapActivity;
 import com.google.firebase.samples.apps.mlkit.java.VisionProcessorBase;
 
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Face Contour Demo.
@@ -36,10 +39,12 @@ public class FaceContourDetectorProcessor extends VisionProcessorBase<List<Fireb
     public double lastLeft = (double)System.currentTimeMillis();
     public double lastCenter = (double)System.currentTimeMillis();
     public double lastRight = (double)System.currentTimeMillis();
+    public double lastEyesOpen = (double)System.currentTimeMillis();
 
     private final FirebaseVisionFaceDetector detector;
+    private final TextToSpeech ttsObj;
 
-    public FaceContourDetectorProcessor() {
+    public FaceContourDetectorProcessor(TextToSpeech ttsObject) {
         FirebaseVisionFaceDetectorOptions options =
                 new FirebaseVisionFaceDetectorOptions.Builder()
                         .setPerformanceMode(FirebaseVisionFaceDetectorOptions.FAST)
@@ -48,6 +53,9 @@ public class FaceContourDetectorProcessor extends VisionProcessorBase<List<Fireb
                         .build();
 
         detector = FirebaseVision.getInstance().getVisionFaceDetector(options);
+        ttsObj = ttsObject;
+        Log.d(TAG, "ttsobj" + ttsObj + ttsObject);
+        Log.d(TAG, "ENTERED THE CONSTRUCTOR");
     }
 
     @Override
@@ -65,13 +73,13 @@ public class FaceContourDetectorProcessor extends VisionProcessorBase<List<Fireb
     }
 
     public double getLastLeft() {
-        return (double)System.currentTimeMillis()-lastLeft;
+        return ((double)System.currentTimeMillis()-lastLeft)/1000;
     }
     public double getLastRight() {
-        return (double)System.currentTimeMillis()-lastRight;
+        return ((double)System.currentTimeMillis()-lastRight)/1000;
     }
     public double getLastCenter() {
-        return (double)System.currentTimeMillis()-lastCenter;
+        return ((double)System.currentTimeMillis()-lastCenter)/1000;
     }
 
     public FirebaseVisionPoint centroid(List<FirebaseVisionPoint> points)  {
@@ -132,12 +140,19 @@ public class FaceContourDetectorProcessor extends VisionProcessorBase<List<Fireb
                 lastCenter = (double)System.currentTimeMillis();
                 Log.d(TAG, "LOOKING NOWHERE");
             }
-            if (face.getLeftEyeOpenProbability() < 0.5 && face.getLeftEyeOpenProbability() < 0.5 && !eyesClosed ){
+            if (face.getLeftEyeOpenProbability() < 0.3 && face.getLeftEyeOpenProbability() < 0.3){
                 Log.d(TAG, "eyes closed");
+                Log.d(TAG, "time:" + (System.currentTimeMillis() - lastEyesOpen));
+                if (System.currentTimeMillis() - lastEyesOpen > 2000) {
+                    lastEyesOpen = System.currentTimeMillis();
+                    Log.d(TAG, "BAD YOUR EYES ARE CLOSED");
+                    ttsObj.speak("Please open your eyes!", TextToSpeech.QUEUE_FLUSH, null);
+                }
                 eyesClosed = true;
             }
                 else {
                 Log.d(TAG, "eyes open");
+                lastEyesOpen = System.currentTimeMillis();
                 eyesClosed = false;
             }
             if (face.getSmilingProbability() < 0.5 && !notSmiling) {
